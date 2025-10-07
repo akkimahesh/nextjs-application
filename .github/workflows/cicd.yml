@@ -37,7 +37,7 @@ jobs:
       - name: Update system and install Docker
         run: |
           sudo apt-get update -y
-          sudo apt-get docker.io -y
+          sudo apt-get install docker.io -y
 
       - name: Check Docker version
         run: docker version
