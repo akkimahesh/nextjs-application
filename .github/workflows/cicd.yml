@@ -28,12 +28,6 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: Uninstall conflicting packages
-        run: |
-          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
-          sudo apt-get remove -y $pkg
-          done
-
       - name: Install Docker
         run: |
          sudo apt-get update -y
