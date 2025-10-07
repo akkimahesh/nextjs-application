@@ -6,34 +6,25 @@ on:
       - main
 
 jobs:
-  minikube-job:
+  build:
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Build docker image
+        run: docker build -t integrationninjas/nextjs-app .
+      - name: Login to docker hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Publish image to docker hub
+        run: docker push integrationninjas/nextjs-app:latest
+
+  deploy:
+    needs: build
     runs-on: self-hosted
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Docker
-        run: sudo apt update && sudo apt install -y docker.io
-
-      - name: Add user to Docker group (requires runner restart outside workflow)
-        run: sudo usermod -aG docker $USER
-
-      - name: Verify Docker permissions (may fail if group not yet active)
-        run: docker version || echo "Docker permission check failed - confirm 'docker' group membership for runner user"
-
-      - name: Start Minikube
-        uses: medyagh/setup-minikube@latest
-        with:
-          minikube-version: '1.34.0'
-          driver: 'docker'
-          container-runtime: 'containerd'
-          kubernetes-version: 'v1.31.0' # Use supported version
-          cpus: '2'
-          memory: '4000m'
-          addons: 'ingress,dashboard'
-
-      - name: Verify Minikube cluster
-        run: kubectl get nodes
-
-      - name: Deploy YAML to Minikube
-        run: kubectl apply -f k8s/deployment.yaml
+      - name: Pull image from docker hub
+        run: docker pull integrationninjas/nextjs-app:latest
+      - name: Delete old container
+        run: docker rm -f nextjs-app-container  
+      - name: Run docker container
+        run: docker run -d -p 3000:3000 --name nextjs-app-container integrationninjas/nextjs-app 
