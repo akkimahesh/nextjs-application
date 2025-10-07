@@ -8,11 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps: 
+    steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Build docker image
+      - name: Build Docker image
         run: docker build -t akkimahesh/nextjs-app:latest .
 
       - name: Verify images
@@ -28,20 +28,32 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
+      - name: Uninstall conflicting packages
+        run: |
+          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+            sudo apt-get remove -y $pkg
+          done
+
       - name: Update system and install Docker
         run: |
-          sudo apt update -y
-          sudo apt install -y ca-certificates curl gnupg lsb-release
+          sudo apt-get update -y
+          sudo apt-get install -y ca-certificates curl gnupg lsb-release
           sudo install -m 0755 -d /etc/apt/keyrings
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
           sudo chmod a+r /etc/apt/keyrings/docker.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt update -y
-          sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+          https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update -y
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
       - name: Check Docker version
         run: docker version
-      - name: avoid needing sudo for Docker commands
+
+      - name: Avoid needing sudo for Docker commands
         run: sudo usermod -aG docker ubuntu
+
       - name: Pull image from Docker Hub
         run: docker pull akkimahesh/nextjs-app:latest
 
@@ -50,26 +62,27 @@ jobs:
 
       - name: Run Docker container
         run: docker run -d --name nextjs-app-container -p 3000:3000 akkimahesh/nextjs-app:latest
-      #minikube setup 
-      - name: install kubectl
+
+      # Minikube setup
+      - name: Install kubectl
         run: |
-          # Download the latest release with the command
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          # Validate the binary (optional)
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-          # Validate the kubectl binary against the checksum file:
           echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
-          # Install kubectl
           sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      - name: check kubectl version
+
+      - name: Check kubectl version
         run: kubectl version --client
-      #conntrack is required for Minikube to function properly.
-      - name: install conntrack
+
+      # conntrack is required for Minikube
+      - name: Install conntrack
         run: sudo apt-get install -y conntrack
+
       - name: Install Minikube
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          rm minikube-linux-amd64
+
       - name: Start Minikube
         run: minikube start --driver=docker
-        
