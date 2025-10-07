@@ -24,9 +24,11 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
+      - name: install Docker
+        run: 
       - name: Pull image from docker hub
-        run: docker pull integrationninjas/nextjs-app:latest
+        run: docker pull akkimahesh/nextjs-app:latest
       - name: Delete old container
         run: docker rm -f nextjs-app-container  
       - name: Run docker container
-        run: docker run -d -p 3000:3000 --name nextjs-app-container integrationninjas/nextjs-app 
+        run: docker run -d -p 3000:3000 --name nextjs-app-container akkimahesh/nextjs-app 
