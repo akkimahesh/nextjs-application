@@ -48,6 +48,8 @@ jobs:
 
       - name: permission for Docker Sockets
         run: sudo chmod 777 /var/run/docker.sock
+      - name: start Docker
+        run: sudo systemctl start docker
       - name: Check Docker version
         run: docker version
 
