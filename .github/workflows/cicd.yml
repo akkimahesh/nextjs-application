@@ -64,11 +64,6 @@ jobs:
       - name: Run Docker container
         run: docker run -d --name nextjs-app-container -p 3000:3000 akkimahesh/nextjs-app:latest
 
-      - name: Set KUBECONFIG
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_DATA }}" > ~/.kube/config
-
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
