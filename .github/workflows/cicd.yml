@@ -28,27 +28,22 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
       - name: Install Docker
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ca-certificates curl gnupg lsb-release
-          sudo mkdir -p /etc/apt/keyrings
-          sudo rm -f /etc/apt/keyrings/docker.gpg
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --batch -o /etc/apt/keyrings/docker.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update -y
-          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+         sudo apt-get update -y
+         sudo apt-get install -y ca-certificates curl gnupg lsb-release
+         sudo mkdir -p /etc/apt/keyrings
+         sudo rm -f /etc/apt/keyrings/docker.gpg
+         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --batch -o /etc/apt/keyrings/docker.gpg
+         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+         $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+         sudo apt-get update -y
+         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-      - name: Permission for Docker socket
+      - name: permission for Docker Sockets
         run: sudo chmod 777 /var/run/docker.sock
-
-      - name: Start Docker
+      - name: start Docker
         run: sudo systemctl start docker
-
       - name: Check Docker version
         run: sudo docker version
 
@@ -64,6 +59,7 @@ jobs:
       - name: Run Docker container
         run: docker run -d --name nextjs-app-container -p 3000:3000 akkimahesh/nextjs-app:latest
 
+      # Minikube setup
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -74,6 +70,7 @@ jobs:
       - name: Check kubectl version
         run: kubectl version --client
 
+      # conntrack is required for Minikube
       - name: Install conntrack
         run: sudo apt-get install -y conntrack
 
@@ -85,8 +82,3 @@ jobs:
 
       - name: Start Minikube
         run: minikube start --driver=docker
-
-      - name: Apply manifests to cluster
-        run: |
-          kubectl apply -f .k8s/deployment.yml
-          kubectl apply -f .k8s/service.yml
