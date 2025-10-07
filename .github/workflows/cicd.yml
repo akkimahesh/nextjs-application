@@ -51,7 +51,7 @@ jobs:
       - name: start Docker
         run: sudo systemctl start docker
       - name: Check Docker version
-        run: docker version
+        run: sudo docker version
 
       - name: Avoid needing sudo for Docker commands
         run: sudo usermod -aG docker ubuntu
