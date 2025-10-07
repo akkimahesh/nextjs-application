@@ -11,28 +11,65 @@ jobs:
     steps: 
       - name: Checkout Source
         uses: actions/checkout@v4
+
       - name: Build docker image
-        run: docker build -t akkimahesh/nextjs-app .
-      - name: verify images
+        run: docker build -t akkimahesh/nextjs-app:latest .
+
+      - name: Verify images
         run: docker images
-      - name: Login to docker hub
+
+      - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - name: Publish image to docker hub
+
+      - name: Publish image to Docker Hub
         run: docker push akkimahesh/nextjs-app:latest
 
   deploy:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: update system
-        run: sudo apt update -y
-      - name: install Docker
-        run: sudo apt install docker.io -y
-      - name: docker version check
+      - name: Update system and install Docker
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ca-certificates curl gnupg lsb-release
+          sudo install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          sudo chmod a+r /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update -y
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      - name: Check Docker version
         run: docker version
-      - name: Pull image from docker hub
+      - name: avoid needing sudo for Docker commands
+        run: sudo usermod -aG docker ubuntu
+      - name: Pull image from Docker Hub
         run: docker pull akkimahesh/nextjs-app:latest
-      - name: Delete old container
-        run: docker rm -f nextjs-app-container  
-      - name: Run docker container
+
+      - name: Delete old container if exists
+        run: docker rm -f nextjs-app-container || echo "No existing container to remove"
+
+      - name: Run Docker container
         run: docker run -d --name nextjs-app-container -p 3000:3000 akkimahesh/nextjs-app:latest
+      #minikube setup 
+      - name: install kubectl
+        run: |
+          # Download the latest release with the command:
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          # Validate the binary (optional)
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+          # Validate the kubectl binary against the checksum file:
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+          # Install kubectl
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      - name: check kubectl version
+        run: kubectl version --client
+      #conntrack is required for Minikube to function properly.
+      - name: install conntrack
+        run: sudo apt-get install -y conntrack
+      - name: Install Minikube
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+      - name: Start Minikube
+        run: minikube start --driver=docker
+        
