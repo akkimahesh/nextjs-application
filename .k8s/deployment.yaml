@@ -1,9 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextjs-app-deployment
+  labels:
+    app: nextjs-app
+  name: nextjs-app
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: nextjs-app
@@ -13,26 +15,23 @@ spec:
         app: nextjs-app
     spec:
       containers:
-        - name: nextjs-app
-          image: akkimahesh/nextjs-app:latest
-          ports:
-            - containerPort: 3000
-          env:
-            # Pass env vars if needed
-            # - name: MONGO_PASSWORD
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: my-secret
-            #       key: mongo-password
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 15
-            periodSeconds: 20
+      - image: ghcr.io/akkimahesh/nextjs-app:latest
+        name: nextjs-app
+        ports:
+          - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /api/healthcheck
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/healthcheck
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
