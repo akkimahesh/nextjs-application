@@ -21,10 +21,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.akkimahesh }}/nextjs-app:latest
+      - name: Build Docker image
+        run: docker build -t akkimahesh/nextjs-app:latest .
+      - name: push to GHCR
+        run: docker push ghcr.io/akkimahesh/nextjs-app:latest
+
