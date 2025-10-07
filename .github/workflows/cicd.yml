@@ -84,7 +84,8 @@ jobs:
 
       - name: Start Minikube 
         run: minikube start --driver=docker
-      - name: apply deployment menifest
-        run: kubectl apply -f .k8s/deployment.yml 
-             kubectl apply -f .k8s/service.yml
+      - name: apply deployment manifest
+        run: kubectl apply -f .k8s/deployment.yml
+      - name: apply service manifest
+        run: kubectl apply -f .k8s/service.yml
 
