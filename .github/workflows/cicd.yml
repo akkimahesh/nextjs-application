@@ -28,6 +28,9 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Install Docker
         run: |
          sudo apt-get update -y
@@ -81,4 +84,7 @@ jobs:
 
       - name: Start Minikube 
         run: minikube start --driver=docker
-        
+      - name: apply deployment menifest
+        run: kubectl apply -f .k8s/deployment.yml 
+             kubectl apply -f .k8s/service.yml
+
