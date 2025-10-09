@@ -25,4 +25,3 @@ jobs:
         run: docker build -t ghcr.io/akkimahesh/nextjs-app:latest .
       - name: push to GHCR
         run: docker push ghcr.io/akkimahesh/nextjs-app:latest
-
